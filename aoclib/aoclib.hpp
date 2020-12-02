@@ -9,7 +9,25 @@
 
 namespace aoc {
 // Reads a file that contains one integer per line
-std::vector<int> read_int_input(const std::string filename);
+std::vector<int> readIntInput(const std::string filename);
+
+// Reads a file and parses each line (using provided function)
+template <class T>
+std::vector<T> readParseInput(const std::string filename, T func(std::string&)) {
+  std::fstream file;
+  std::vector<T> v;
+  file.open(filename, std::ios::in);
+  if (file.is_open()) {
+    std::string line;
+    while (std::getline(file, line)) {
+      v.push_back(func(line));
+    }
+  } else {
+    std::cerr << "Can't open file" << std::endl;
+    std::cerr << "PWD: " << std::filesystem::current_path() << std::endl;
+  }
+  return v;
+}
 }  // namespace aoc
 
 #endif

@@ -1,7 +1,7 @@
 #include "aoclib.hpp"
 
 namespace aoc {
-std::vector<int> read_int_input(const std::string filename) {
+std::vector<int> readIntInput(const std::string filename) {
   std::fstream file;
   std::vector<int> v;
   file.open(filename, std::ios::in);

@@ -44,7 +44,7 @@ void part2(std::vector<int> input) {
 
 int main() {
   const std::string filename = "../day-01/input.txt";
-  auto input = aoc::read_int_input(filename);
+  auto input = aoc::readIntInput(filename);
 
   part1(input);
   part2(input);
