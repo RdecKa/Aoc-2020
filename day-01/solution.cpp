@@ -1,7 +1,3 @@
-#include <algorithm>
-#include <iostream>
-#include <string>
-
 #include "aoclib.hpp"
 
 void part1(std::vector<int> input) {

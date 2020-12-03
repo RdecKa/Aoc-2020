@@ -1,8 +1,3 @@
-#include <algorithm>
-#include <boost/algorithm/string.hpp>
-#include <iostream>
-#include <string>
-
 #include "aoclib.hpp"
 
 class Policy {
