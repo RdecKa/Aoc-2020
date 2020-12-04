@@ -10,12 +10,10 @@
 #include <vector>
 
 namespace aoc {
-// Reads a file that contains one integer per line
-std::vector<int> readIntInput(const std::string filename);
 
 // Reads a file and parses each line (using provided function)
 template <class T>
-std::vector<T> readParseInput(const std::string filename, T func(std::string&)) {
+std::vector<T> readParseInput(const std::string filename, T func(std::string &)) {
   std::fstream file;
   std::vector<T> v;
   file.open(filename, std::ios::in);
@@ -30,6 +28,12 @@ std::vector<T> readParseInput(const std::string filename, T func(std::string&)) 
   }
   return v;
 }
+
+// Reads a file that contains one integer per line
+std::vector<int> readIntInput(const std::string &filename);
+
+std::vector<std::string> readStringInput(const std::string &filename);
+
 }  // namespace aoc
 
 #endif
