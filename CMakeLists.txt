@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 include_directories(aoclib)
 add_library(aoclib aoclib/aoclib.cpp)
 
-foreach(D RANGE 1 7)
+foreach(D RANGE 1 8)
     message(STATUS "day-0${D}")
     add_executable("day-0${D}" "day-0${D}/solution.cpp")
     target_link_libraries("day-0${D}" aoclib)
