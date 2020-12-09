@@ -32,6 +32,7 @@ std::vector<T> readParseInput(const std::string filename, T func(std::string &))
 
 // Reads a file that contains one integer per line
 std::vector<int> readIntInput(const std::string &filename);
+std::vector<int> readUnsignedLongInput(const std::string &filename);
 
 std::vector<std::string> readStringInput(const std::string &filename);
 
