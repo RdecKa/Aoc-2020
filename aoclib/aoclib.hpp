@@ -24,7 +24,7 @@ std::vector<T> readParseInput(const std::string filename, T func(std::string &))
       v.push_back(func(line));
     }
   } else {
-    std::cerr << "Can't open file" << std::endl;
+    std::cerr << "Can't open file " << filename << std::endl;
     std::cerr << "PWD: " << std::filesystem::current_path() << std::endl;
   }
   return v;
