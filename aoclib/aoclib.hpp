@@ -36,6 +36,16 @@ std::vector<int> readUnsignedLongInput(const std::string &filename);
 
 std::vector<std::string> readStringInput(const std::string &filename);
 
+template <class T>
+void print2dVector(std::vector<std::vector<T>> &grid) {
+  for (auto row : grid) {
+    for (auto cell : row) {
+      std::cout << cell;
+    }
+    std::cout << std::endl;
+  }
+}
+
 }  // namespace aoc
 
 #endif
