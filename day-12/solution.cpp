@@ -1,7 +1,7 @@
 #include "aoclib.hpp"
 
-enum Action { N = 'N', S = 'S', E = 'E', W = 'W', L = 'L', R = 'R', F = 'F' };
-enum Orientaton { North = 'N', South = 'S', East = 'E', West = 'W' };
+enum class Action { N = 'N', S = 'S', E = 'E', W = 'W', L = 'L', R = 'R', F = 'F' };
+enum class Orientation { North = 'N', South = 'S', East = 'E', West = 'W' };
 
 class Instruction {
  private:
@@ -28,18 +28,20 @@ class Navigation {
   int east;
   int north;
   unsigned int orientationIndex;
-  const std::array<Orientaton, 4> directions{North, West, South, East};
+  const std::array<Orientation, 4> directions{Orientation::North, Orientation::West, Orientation::South,
+                                              Orientation::East};
 
-  void moveNorth(const unsigned int value) { this->north += value; }
-  void moveSouth(const unsigned int value) { this->north -= value; }
-  void moveEast(const unsigned int value) { this->east += value; }
-  void moveWest(const unsigned int value) { this->east -= value; }
-  void rotateLeft(const unsigned int value) {
+  void moveNorth(unsigned int value) { this->north += value; }
+  void moveSouth(unsigned int value) { this->north -= value; }
+  void moveEast(unsigned int value) { this->east += value; }
+  void moveWest(unsigned int value) { this->east -= value; }
+
+  void rotateLeft(unsigned int value) {
     unsigned int n = value / 90;
     orientationIndex += n;
     orientationIndex %= 4;
   }
-  void rotateRight(const unsigned int value) {
+  void rotateRight(unsigned int value) {
     unsigned int n = value / 90;
     orientationIndex += 4 - n;
     orientationIndex %= 4;
@@ -47,42 +49,43 @@ class Navigation {
 
  public:
   Navigation() : east(0), north(0), orientationIndex(3) {}
+
   void followInstruction(Instruction& instr) {
     switch (instr.getAction()) {
-      case N:
+      case Action::N:
         this->moveNorth(instr.getValue());
         break;
-      case W:
+      case Action::W:
         this->moveWest(instr.getValue());
         break;
-      case S:
+      case Action::S:
         this->moveSouth(instr.getValue());
         break;
-      case E:
+      case Action::E:
         this->moveEast(instr.getValue());
         break;
-      case L:
+      case Action::L:
         this->rotateLeft(instr.getValue());
         break;
-      case R:
+      case Action::R:
         this->rotateRight(instr.getValue());
         break;
-      case F:
+      case Action::F:
         switch (this->directions[this->orientationIndex]) {
-          case North:
+          case Orientation::North:
             this->moveNorth(instr.getValue());
             break;
-          case West:
+          case Orientation::West:
             this->moveWest(instr.getValue());
             break;
-          case South:
+          case Orientation::South:
             this->moveSouth(instr.getValue());
             break;
-          case East:
+          case Orientation::East:
             this->moveEast(instr.getValue());
             break;
           default:
-            std::cerr << "Invalid orientation " << this->directions[this->orientationIndex] << std::endl;
+            std::cerr << "Invalid orientation" << std::endl;
             break;
         }
         break;
@@ -93,7 +96,7 @@ class Navigation {
   }
   int getPoseNorth() const { return this->north; }
   int getPoseEast() const { return this->east; }
-  Orientaton getOrientation() const { return this->directions[this->orientationIndex]; }
+  Orientation getOrientation() const { return this->directions[this->orientationIndex]; }
 };
 
 std::ostream& operator<<(std::ostream& output, const Navigation& nav) {
@@ -103,8 +106,8 @@ std::ostream& operator<<(std::ostream& output, const Navigation& nav) {
 Instruction parseInputLine(std::string& line) { return Instruction(line); }
 
 void part1(std::vector<Instruction>& instructions) {
-  Navigation navigation = Navigation();
-  for (auto instr : instructions) {
+  Navigation navigation;
+  for (auto& instr : instructions) {
     navigation.followInstruction(instr);
   }
   int result = abs(navigation.getPoseNorth()) + abs(navigation.getPoseEast());
@@ -119,49 +122,50 @@ class CorrectNavigation {
   int positionNorth;
   int positionEast;
 
-  void moveWaypointNorth(const int value) { this->waypointNorth += value; }
-  void moveWaypointEast(const int value) { this->waypointEast += value; }
+  void moveWaypointNorth(int value) { this->waypointNorth += value; }
+  void moveWaypointEast(int value) { this->waypointEast += value; }
   void rotateWaypointLeft90() {
     int tmp = this->waypointEast;
     this->waypointEast = -this->waypointNorth;
     this->waypointNorth = tmp;
   }
-  void rotateWaypointLeft(const unsigned int value) {
+  void rotateWaypointLeft(unsigned int value) {
     int n = value / 90;
     for (int i = 0; i < n; ++i) this->rotateWaypointLeft90();
   }
-  void rotateWaypointRight(const unsigned int value) {
+  void rotateWaypointRight(unsigned int value) {
     int n = 4 - value / 90;
     for (int i = 0; i < n; ++i) this->rotateWaypointLeft90();
   }
-  void moveShip(const unsigned int value) {
+  void moveShip(unsigned int value) {
     this->positionEast += value * this->waypointEast;
     this->positionNorth += value * this->waypointNorth;
   }
 
  public:
   CorrectNavigation() : waypointNorth(1), waypointEast(10), positionNorth(0), positionEast(0) {}
+
   void followInstruction(Instruction& instr) {
     switch (instr.getAction()) {
-      case N:
+      case Action::N:
         this->moveWaypointNorth(instr.getValue());
         break;
-      case S:
+      case Action::S:
         this->moveWaypointNorth(-instr.getValue());
         break;
-      case E:
+      case Action::E:
         this->moveWaypointEast(instr.getValue());
         break;
-      case W:
+      case Action::W:
         this->moveWaypointEast(-instr.getValue());
         break;
-      case L:
+      case Action::L:
         this->rotateWaypointLeft(instr.getValue());
         break;
-      case R:
+      case Action::R:
         this->rotateWaypointRight(instr.getValue());
         break;
-      case F:
+      case Action::F:
         this->moveShip(instr.getValue());
         break;
       default:
@@ -182,7 +186,7 @@ std::ostream& operator<<(std::ostream& output, const CorrectNavigation& nav) {
 }
 void part2(std::vector<Instruction>& instructions) {
   CorrectNavigation navigation = CorrectNavigation();
-  for (auto instr : instructions) {
+  for (auto& instr : instructions) {
     navigation.followInstruction(instr);
   }
   std::array<int, 2> position = navigation.getPosition();
@@ -192,7 +196,7 @@ void part2(std::vector<Instruction>& instructions) {
 
 int main() {
   const std::string filename = "../day-12/input.txt";
-  auto instructions = aoc::readParseInput(filename, parseInputLine);
+  std::vector<Instruction> instructions = aoc::readParseInput(filename, parseInputLine);
 
   part1(instructions);
   part2(instructions);
