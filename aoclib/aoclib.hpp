@@ -8,6 +8,7 @@
 #include <iostream>
 #include <set>
 #include <string>
+#include <variant>
 #include <vector>
 
 namespace aoc {
