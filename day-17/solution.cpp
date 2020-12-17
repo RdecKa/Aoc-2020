@@ -1,10 +1,10 @@
 #include "aoclib.hpp"
 
 struct HashMapKey {
-  unsigned int x, y, z;
+  unsigned int x, y, z, w;
 
   bool operator==(const HashMapKey &other) const {
-    return (this->x == other.x && this->y == other.y && this->z == other.z);
+    return (this->x == other.x && this->y == other.y && this->z == other.z && this->w == other.w);
   }
 
   unsigned int operator[](std::size_t idx) {
@@ -15,6 +15,8 @@ struct HashMapKey {
         return this->y;
       case 2:
         return this->z;
+      case 3:
+        return this->w;
       default:
         std::cerr << "Index " << idx << " out of range" << std::endl;
         std::terminate();
@@ -33,6 +35,7 @@ struct KeyHasher {
     res = res * 31 + k.x;
     res = res * 31 + k.y;
     res = res * 31 + k.z;
+    res = res * 31 + k.w;
     return res;
   }
 };
@@ -40,16 +43,18 @@ struct KeyHasher {
 class SparseMatrix {
  private:
   std::unordered_map<HashMapKey, HashMapEntry, KeyHasher> values;
+  bool useW;  // Whether to use the 4th dimension or not
 
  public:
-  SparseMatrix(std::vector<std::string> &input, const unsigned int offset) {
+  SparseMatrix(std::vector<std::string> &input, const unsigned int offset, bool useW = false) {
     for (unsigned int y = 0; y < input.size(); ++y) {
       for (unsigned int x = 0; x < input[0].size(); ++x) {
         if (input[y][x] == '#') {
-          this->values[{x + offset, y + offset, 0 + offset}] = {true, 0};
+          this->values[{x + offset, y + offset, 0 + offset, 0 + offset}] = {true, 0};
         }
       }
     }
+    this->useW = useW;
   }
 
   std::unordered_map<HashMapKey, HashMapEntry, KeyHasher> getValues() const { return this->values; }
@@ -87,16 +92,25 @@ class SparseMatrix {
     }
 
     // Count active neighbours
+    unsigned int wLimit = 0;
+    unsigned int sub = 0;
+    if (this->useW) {
+      wLimit = 2;
+      sub = 1;
+    }
     for (auto &active : activeCells) {
-      auto [curX, curY, curZ] = active.first;
+      auto [curX, curY, curZ, curW] = active.first;
       for (unsigned int xi = 0; xi <= 2; ++xi) {
         unsigned int x = curX + xi - 1;
         for (unsigned int yi = 0; yi <= 2; ++yi) {
           unsigned int y = curY + yi - 1;
           for (unsigned int zi = 0; zi <= 2; ++zi) {
             unsigned int z = curZ + zi - 1;
-            HashMapKey key = {x, y, z};
-            this->addActiveNeighbour(key);
+            for (unsigned int wi = 0; wi <= wLimit; ++wi) {
+              unsigned int w = curW + wi - sub;
+              HashMapKey key = {x, y, z, w};
+              this->addActiveNeighbour(key);
+            }
           }
         }
       }
@@ -133,32 +147,34 @@ std::ostream &operator<<(std::ostream &output, const SparseMatrix &sm) {
   auto [xMin, xMax] = sm.getRange(0);
   auto [yMin, yMax] = sm.getRange(1);
   auto [zMin, zMax] = sm.getRange(2);
+  auto [wMin, wMax] = sm.getRange(3);
 
-  for (unsigned int z = zMin; z <= zMax; ++z) {
-    output << "Layer z=" << z << std::endl;
-    for (unsigned int y = yMin; y <= yMax; ++y) {
-      for (unsigned int x = xMin; x <= xMax; ++x) {
-        HashMapEntry &entry = values[{x, y, z}];
-        if (entry.active) {
-          output << "#";
-        } else {
-          output << ".";
+  for (unsigned int w = wMin; w <= wMax; ++w) {
+    for (unsigned int z = zMin; z <= zMax; ++z) {
+      output << "Layer z=" << z << ", w=" << w << std::endl;
+      for (unsigned int y = yMin; y <= yMax; ++y) {
+        for (unsigned int x = xMin; x <= xMax; ++x) {
+          HashMapEntry &entry = values[{x, y, z, w}];
+          if (entry.active) {
+            output << "#";
+          } else {
+            output << ".";
+          }
         }
+        output << std::endl;
       }
-      output << std::endl;
     }
   }
-
   return output;
 }
 
-void part1(SparseMatrix matrix) {
+void solve(std::vector<std::string> &input, const unsigned int offset, bool useW = false) {
+  SparseMatrix matrix = SparseMatrix(input, offset, useW);
   for (int i = 0; i < 6; ++i) {
     matrix.makeStep();
   }
   std::cout << matrix.getNumActiveCells() << std::endl;
 }
-void part2(std::vector<int> &input) {}
 
 int main() {
   const std::string filename = "../day-17/input.txt";
@@ -166,8 +182,8 @@ int main() {
 
   const unsigned int offset = 6;  // To avoid negative numbers for coordinates (hash calculation!)
 
-  SparseMatrix matrix = SparseMatrix(input, offset);
-  part1(matrix);
+  solve(input, offset);        // Star 1
+  solve(input, offset, true);  // Star 2
 
   return 0;
 }
