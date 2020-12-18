@@ -83,22 +83,71 @@ std::pair<std::unique_ptr<Expression>, int> parseExpression(std::string &line, i
   return std::pair(std::move(root), i);
 }
 
+// Insert parentheses around expressions with +
+std::string insertParantheses(std::string &line) {
+  std::string newLine = line;
+  int i = 0;
+  while (i < newLine.size()) {
+    if (newLine[i] != '+') {
+      ++i;
+      continue;
+    }
+
+    // Find end of the expr (to the right of +)
+    size_t posEnd = i + 1;
+    int parDiff = 0;
+    char lastRead = newLine[posEnd];
+    while (!(parDiff == 0 && (lastRead == ')' || isdigit(lastRead))) && posEnd < newLine.size()) {
+      if (newLine[posEnd] == '(') ++parDiff;
+      if (newLine[posEnd] == ')') --parDiff;
+      lastRead = newLine[posEnd];
+      ++posEnd;
+    }
+    newLine.insert(posEnd, ")");
+
+    // Find beginning of the expr (to the left of +)
+    size_t posStart = i - 1;
+    parDiff = 0;
+    lastRead = newLine[posStart];
+    while (!(parDiff == 0 && (lastRead == '(' || isdigit(lastRead))) && posStart > 0) {
+      if (newLine[posStart] == '(') ++parDiff;
+      if (newLine[posStart] == ')') --parDiff;
+      lastRead = newLine[posStart];
+      --posStart;
+    }
+    if (posStart > 0) ++posStart;
+    newLine.insert(posStart, "(");
+
+    i += 2;  // Additional '(' was added before position i, so not just ++i
+  }
+  return newLine;
+}
+
 std::unique_ptr<Expression> parseExpressionWrapper(std::string &line) { return parseExpression(line, 0).first; }
+
+std::unique_ptr<Expression> parseExpressionWrapper2(std::string &line) {
+  std::string newLine = insertParantheses(line);
+  return parseExpression(newLine, 0).first;
+}
 
 void solve(std::vector<std::unique_ptr<Expression>> &input) {
   unsigned long sum = 0;
   for (auto &e : input) {
     sum += static_cast<unsigned long>(e->eval());
-    // std::cout << e->str() << std::endl;
   }
   std::cout << sum << std::endl;
 }
 
 int main() {
   const std::string filename = "../day-18/input.txt";
-  auto input = aoc::readParseInput(filename, parseExpressionWrapper);
 
+  // Part 1
+  auto input = aoc::readParseInput(filename, parseExpressionWrapper);
   solve(input);
 
+  // Part 2
+  // Insert parantheses around expressions with +, then solve as before.
+  auto input2 = aoc::readParseInput(filename, parseExpressionWrapper2);
+  solve(input2);
   return 0;
 }
