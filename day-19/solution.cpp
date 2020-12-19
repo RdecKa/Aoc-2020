@@ -2,7 +2,7 @@
 
 struct ReturnObject {
   bool success;
-  size_t newStart;  // Next position where to start parsing
+  std::vector<size_t> newStarts;  // Next positions where to start parsing
 };
 
 class Rule {
@@ -24,7 +24,10 @@ class Letter : public Rule {
  public:
   Letter(size_t idx, char letter) : Rule(idx), letter(letter) {}
   ReturnObject parse(std::string& message, size_t position) const override {
-    return {message[position] == this->letter, position + 1};
+    if (message[position] == this->letter) {
+      return {true, {position + 1}};
+    }
+    return {false, {}};
   }
   std::string str() const override { return std::to_string(this->ruleIdx) + ": \"" + this->letter + "\""; }
 };
@@ -37,16 +40,21 @@ class CompositeRule : public Rule {
   CompositeRule(size_t idx, std::vector<std::shared_ptr<Rule>> subrules) : Rule(idx), subrules(subrules) {}
 
   ReturnObject parse(std::string& message, size_t position) const override {
-    if (position >= message.size()) return {false, position};
+    if (position >= message.size()) return {false, {}};
 
-    size_t startAtPos = position;
+    std::vector<size_t> possibleStarts = {position};
     for (auto& rule : this->subrules) {
-      auto [success, pos] = rule->parse(message, startAtPos);
-      if (!success) return {false, position};
-      startAtPos = pos;
+      std::vector<size_t> possibleNextStarts;
+      for (auto& pos : possibleStarts) {
+        auto [success, positions] = rule->parse(message, pos);
+        if (success) {
+          possibleNextStarts.insert(possibleNextStarts.end(), positions.begin(), positions.end());
+        }
+      }
+      possibleStarts = possibleNextStarts;
     }
 
-    return {true, startAtPos};
+    return {possibleStarts.size() > 0, possibleStarts};
   }
 
   std::string str() const {
@@ -68,13 +76,17 @@ class OrRule : public Rule {
   void init(std::vector<std::shared_ptr<Rule>> options) { this->options = options; }
 
   ReturnObject parse(std::string& message, size_t position) const override {
-    if (position >= message.size()) return {false, position};
+    if (position >= message.size()) return {false, {}};
 
+    std::vector<size_t> possiblePositions;
     for (auto& option : this->options) {
-      auto [success, newStart] = option->parse(message, position);
-      if (success) return {true, newStart};
+      auto [success, newStarts] = option->parse(message, position);
+      if (success) possiblePositions.insert(possiblePositions.end(), newStarts.begin(), newStarts.end());
     }
-    return {false, position};
+    if (possiblePositions.size() > 0) {
+      return {true, possiblePositions};
+    }
+    return {false, {}};
   }
 
   std::string str() const override {
@@ -140,6 +152,17 @@ std::vector<std::shared_ptr<Rule>> createRules(std::vector<std::string>& input) 
   return rulesVector;
 }
 
+std::vector<std::string> transformRules(std::vector<std::string> input) {
+  for (int i = 0; i < input.size(); ++i) {
+    if (input[i] == "8: 42") {
+      input[i] = "8: 42 | 42 8";
+    } else if (input[i] == "11: 42 31") {
+      input[i] = "11: 42 31 | 42 11 31";
+    }
+  }
+  return input;
+}
+
 std::pair<std::vector<std::string>, std::vector<std::string>> splitInput(std::vector<std::string>& input) {
   auto it = input.begin();
   while (*it != "") ++it;
@@ -153,25 +176,35 @@ std::pair<std::vector<std::string>, std::vector<std::string>> splitInput(std::ve
   return std::pair(rules, messages);
 }
 
-void part1(std::vector<int>& input) {}
-void part2(std::vector<int>& input) {}
+void solve(std::vector<std::shared_ptr<Rule>>& rules, std::vector<std::string>& messages) {
+  std::shared_ptr<Rule> rule0 = rules[0];
+  int valid = 0;
+  for (auto& msg : messages) {
+    auto [success, positions] = rule0->parse(msg, 0);
+    if (!success) continue;
+    for (auto p : positions) {
+      if (p == msg.size()) {
+        ++valid;
+        break;
+      }
+    }
+  }
+  std::cout << valid << std::endl;
+}
 
 int main() {
   const std::string filename = "../day-19/input.txt";
   auto input = aoc::readStringInput(filename);
   auto [rulesStr, messages] = splitInput(input);
 
+  // Star 1
   std::vector<std::shared_ptr<Rule>> rules = createRules(rulesStr);
+  solve(rules, messages);
 
-  std::shared_ptr<Rule> rule0 = rules[0];
-  int valid = 0;
-  for (auto& msg : messages) {
-    auto [success, position] = rule0->parse(msg, 0);
-    if (success && position == msg.size()) {
-      ++valid;
-    }
-  }
-  std::cout << valid << std::endl;
+  // Star 2
+  std::vector<std::string> transformedRulesStr = transformRules(rulesStr);
+  std::vector<std::shared_ptr<Rule>> transformedRules = createRules(transformedRulesStr);
+  solve(transformedRules, messages);
 
   return 0;
 }
