@@ -238,61 +238,49 @@ std::vector<std::string> constructImage(std::unordered_map<unsigned int, std::un
   unsigned int searchingForId = firstCorner.getTileRight();
   unsigned int prevId = firstCorner.getId();
   for (size_t j = 1; j < idPositions[0].size(); ++j) {
-    for (auto& entry : tiles) {
-      Tile& tile = *entry.second;
-      if (tile.isFixed()) {
-        continue;
-      }
-      if (tile.getId() != searchingForId) {
-        continue;
-      }
+    Tile& tile = *tiles[searchingForId];
 
-      if (tile.isEdge()) {
-        while (tile.getTileAbove() != 0) tile.rotateLeft();
-        if (tile.getTileRight() == prevId) tile.flip();
-      } else if (tile.isCorner()) {
-        while (tile.getTileAbove() != 0 || tile.getTileRight() != 0) tile.rotateLeft();
-        if (tile.getTileBelow() == prevId) tile.flip();
-        while (tile.getTileAbove() != 0 || tile.getTileRight() != 0) tile.rotateLeft();
-      }
+    if (tile.isFixed()) continue;
+    if (tile.getId() != searchingForId) continue;
 
-      idPositions[0][j] = tile.getId();
-      tile.setFixed();
-      searchingForId = tile.getTileRight();
-      prevId = tile.getId();
-      break;
+    if (tile.isEdge()) {
+      while (tile.getTileAbove() != 0) tile.rotateLeft();
+      if (tile.getTileRight() == prevId) tile.flip();
+    } else if (tile.isCorner()) {
+      while (tile.getTileAbove() != 0 || tile.getTileRight() != 0) tile.rotateLeft();
+      if (tile.getTileBelow() == prevId) tile.flip();
+      while (tile.getTileAbove() != 0 || tile.getTileRight() != 0) tile.rotateLeft();
     }
+
+    idPositions[0][j] = tile.getId();
+    tile.setFixed();
+    searchingForId = tile.getTileRight();
+    prevId = tile.getId();
   }
 
   // Finish first column
   searchingForId = firstCorner.getTileBelow();
   prevId = firstCorner.getId();
   for (size_t i = 1; i < idPositions.size(); ++i) {
-    for (auto& entry : tiles) {
-      Tile& tile = *entry.second;
-      if (tile.isFixed()) {
-        continue;
-      }
-      if (tile.getId() != searchingForId) {
-        continue;
-      }
+    Tile& tile = *tiles[searchingForId];
 
-      if (tile.isEdge()) {
-        while (tile.getTileLeft() != 0) tile.rotateLeft();
-        if (tile.getTileBelow() == prevId) tile.flip();
-        while (tile.getTileLeft() != 0) tile.rotateLeft();
-      } else if (tile.isCorner()) {
-        while (tile.getTileLeft() != 0 || tile.getTileBelow() != 0) tile.rotateLeft();
-        if (tile.getTileRight() == prevId) tile.flip();
-        while (tile.getTileLeft() != 0 || tile.getTileBelow() != 0) tile.rotateLeft();
-      }
+    if (tile.isFixed()) continue;
+    if (tile.getId() != searchingForId) continue;
 
-      idPositions[i][0] = tile.getId();
-      tile.setFixed();
-      searchingForId = tile.getTileBelow();
-      prevId = tile.getId();
-      break;
+    if (tile.isEdge()) {
+      while (tile.getTileLeft() != 0) tile.rotateLeft();
+      if (tile.getTileBelow() == prevId) tile.flip();
+      while (tile.getTileLeft() != 0) tile.rotateLeft();
+    } else if (tile.isCorner()) {
+      while (tile.getTileLeft() != 0 || tile.getTileBelow() != 0) tile.rotateLeft();
+      if (tile.getTileRight() == prevId) tile.flip();
+      while (tile.getTileLeft() != 0 || tile.getTileBelow() != 0) tile.rotateLeft();
     }
+
+    idPositions[i][0] = tile.getId();
+    tile.setFixed();
+    searchingForId = tile.getTileBelow();
+    prevId = tile.getId();
   }
 
   // Finish the rest
