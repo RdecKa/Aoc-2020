@@ -1,6 +1,8 @@
 #ifndef AOCLIB_H_
 #define AOCLIB_H_
 
+#include <math.h>
+
 #include <algorithm>
 #include <boost/algorithm/string.hpp>
 #include <filesystem>
