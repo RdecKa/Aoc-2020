@@ -140,7 +140,7 @@ class Tile {
     return this->matches[idx];
   }
 
-  std::vector<std::string> rotateImageLeft(std::vector<std::string>& image) {
+  static std::vector<std::string> rotateImageLeft(std::vector<std::string>& image) {
     std::vector<std::string> newImage(image[0].size(), "");
     for (size_t i = 0; i < image.size(); ++i) {
       for (size_t j = 0; j < image[0].size(); ++j) {
@@ -151,7 +151,7 @@ class Tile {
     return newImage;
   }
 
-  std::vector<std::string> flipImage(std::vector<std::string> image) {
+  static std::vector<std::string> flipImage(std::vector<std::string> image) {
     // Intentionally passed by value!
     for (size_t i = 0; i < image.size(); ++i) {
       std::reverse(std::begin(image[i]), std::end(image[i]));
@@ -216,7 +216,7 @@ std::unordered_map<unsigned int, std::unique_ptr<Tile>> createTiles(std::vector<
   return tiles;
 }
 
-void constructImage(std::unordered_map<unsigned int, std::unique_ptr<Tile>>& tiles) {
+std::vector<std::string> constructImage(std::unordered_map<unsigned int, std::unique_ptr<Tile>>& tiles) {
   const size_t maxIdx = 9;
   int numTilesPerSide = sqrt(tiles.size());
   std::vector<std::vector<unsigned int>> idPositions(numTilesPerSide, std::vector<unsigned int>(numTilesPerSide, 0));
@@ -224,7 +224,6 @@ void constructImage(std::unordered_map<unsigned int, std::unique_ptr<Tile>>& til
   // Find corner to begin with
   auto it = tiles.begin();
   while (!(*(*it).second).isCorner()) {
-    (*(*it).second).print();
     ++it;
   }
 
@@ -235,9 +234,9 @@ void constructImage(std::unordered_map<unsigned int, std::unique_ptr<Tile>>& til
   firstCorner.setFixed();
   idPositions[0][0] = firstCorner.getId();
 
+  // Finish first row
   unsigned int searchingForId = firstCorner.getTileRight();
   unsigned int prevId = firstCorner.getId();
-  // Finish first row
   for (size_t j = 1; j < idPositions[0].size(); ++j) {
     for (auto& entry : tiles) {
       Tile& tile = *entry.second;
@@ -326,12 +325,71 @@ void constructImage(std::unordered_map<unsigned int, std::unique_ptr<Tile>>& til
     }
   }
 
-  image = firstCorner.rotateImageLeft(image);
-  image = firstCorner.rotateImageLeft(image);
-  image = firstCorner.rotateImageLeft(image);
+  return image;
+}
 
-  for (auto& line : image) {
-    std::cout << line << std::endl;
+std::vector<std::string> getMonster() {
+  std::string line1 = "                  # ";
+  std::string line2 = "#    ##    ##    ###";
+  std::string line3 = " #  #  #  #  #  #   ";
+  return {line1, line2, line3};
+}
+
+std::vector<std::vector<size_t>> getMarkedPositions(std::vector<std::string> image) {
+  std::vector<std::vector<size_t>> vec(image.size(), std::vector<size_t>());
+  for (size_t line = 0; line < image.size(); ++line) {
+    for (size_t i = 0; i < image[line].size(); ++i) {
+      if (image[line][i] == '#') {
+        vec[line].push_back(i);
+      }
+    }
+  }
+  return vec;
+}
+
+bool checkIfMonsterAtPosition(std::vector<std::string>& image, size_t posI, size_t posJ,
+                              std::vector<std::vector<size_t>>& markedPositions, unsigned int monsterWidth,
+                              unsigned int monsterHeight, bool mark = false) {
+  if (posI <= image.size() - monsterHeight && posJ <= image[0].size() - monsterWidth) {
+    for (int i = 0; i < monsterHeight; ++i) {
+      for (auto j : markedPositions[i]) {
+        if (image[posI + i][posJ + j] != '#') {
+          return false;
+        } else if (mark) {
+          image[posI + i][posJ + j] = 'O';
+        }
+      }
+    }
+    return true;
+  }
+  return false;
+}
+
+void markMonstersOneOrientation(std::vector<std::string>& image, std::vector<std::string>& monster) {
+  std::vector<std::vector<size_t>> markedPositions = getMarkedPositions(monster);
+
+  for (size_t i = 0; i < image.size(); ++i) {
+    for (size_t j = 0; j < image[i].size(); ++j) {
+      if (checkIfMonsterAtPosition(image, i, j, markedPositions, monster[0].size(), monster.size())) {
+        checkIfMonsterAtPosition(image, i, j, markedPositions, monster[0].size(), monster.size(), true);
+      }
+    }
+  }
+}
+
+void markMonsters(std::vector<std::string>& image) {
+  std::vector<std::string> monster = getMonster();
+
+  for (size_t i = 0; i < 4; ++i) {
+    markMonstersOneOrientation(image, monster);
+    monster = Tile::rotateImageLeft(monster);
+  }
+
+  monster = Tile::flipImage(monster);
+
+  for (size_t i = 0; i < 4; ++i) {
+    markMonstersOneOrientation(image, monster);
+    monster = Tile::rotateImageLeft(monster);
   }
 }
 
@@ -346,10 +404,18 @@ void part1(std::unordered_map<unsigned int, std::unique_ptr<Tile>>& tiles) {
   std::cout << product << std::endl;
 }
 
-void part2(std::unordered_map<unsigned int, std::unique_ptr<Tile>>& tiles) {}
+void part2(std::vector<std::string>& image) {
+  unsigned int count = 0;
+  for (std::string& line : image) {
+    for (char c : line) {
+      if (c == '#') ++count;
+    }
+  }
+  std::cout << count << std::endl;
+}
 
 int main() {
-  const std::string filename = "../day-20/small_input.txt";
+  const std::string filename = "../day-20/input.txt";
   std::vector<std::string> input = aoc::readStringInput(filename);
 
   std::unordered_map<unsigned int, std::unique_ptr<Tile>> tiles = createTiles(input);
@@ -368,8 +434,14 @@ int main() {
     t.second->removeBorders();
   }
 
-  constructImage(tiles);
-  // part2(tiles);
+  std::vector<std::string> image = constructImage(tiles);
+  markMonsters(image);
+
+  part2(image);
+
+  for (auto& line : image) {
+    std::cout << line << std::endl;
+  }
 
   return 0;
 }
