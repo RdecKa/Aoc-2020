@@ -13,7 +13,7 @@ foreach(D RANGE 1 9)
     target_link_libraries("day-0${D}" aoclib)
 endforeach()
 
-foreach(D RANGE 10 20)
+foreach(D RANGE 10 21)
     message(STATUS "day-${D}")
     add_executable("day-${D}" "day-${D}/solution.cpp")
     target_link_libraries("day-${D}" aoclib)
