@@ -42,15 +42,15 @@ std::ostream &operator<<(std::ostream &output, const Ingredient &i) {
 
 class Dish {
  private:
-  std::unordered_set<Ingredient *> ingredients;
-  std::unordered_set<Allergen *> allergens;
+  std::set<Ingredient *> ingredients;
+  std::set<Allergen *> allergens;
 
  public:
-  Dish(std::unordered_set<Ingredient *> ingredients, std::unordered_set<Allergen *> allergens)
+  Dish(std::set<Ingredient *> ingredients, std::set<Allergen *> allergens)
       : ingredients(ingredients), allergens(allergens) {}
 
-  std::unordered_set<Ingredient *> getIngredients() const { return this->ingredients; }
-  std::unordered_set<Allergen *> getAllergens() const { return this->allergens; }
+  std::set<Ingredient *> getIngredients() const { return this->ingredients; }
+  std::set<Allergen *> getAllergens() const { return this->allergens; }
 
   void refreshAllergens() {
     for (auto &ingred : this->ingredients) {
@@ -87,7 +87,7 @@ Dish parseInput(std::string &line, std::vector<std::unique_ptr<Ingredient>> &all
   splitValues.clear();
 
   // Parse ingredients
-  std::unordered_set<Ingredient *> ingredients;
+  std::set<Ingredient *> ingredients;
   boost::split(splitValues, ingredientsStr, boost::is_any_of(" "));
   for (auto &ingName : splitValues) {
     if (ingName == "") continue;
@@ -97,7 +97,7 @@ Dish parseInput(std::string &line, std::vector<std::unique_ptr<Ingredient>> &all
 
     if (search == allIngredients.end()) {
       allIngredients.push_back(std::make_unique<Ingredient>(ingName, std::nullopt));
-      search = std::find_if(allIngredients.begin(), allIngredients.end(), predicate);
+      search = allIngredients.end() - 1;
     }
 
     ingredients.insert((*search).get());
@@ -106,7 +106,7 @@ Dish parseInput(std::string &line, std::vector<std::unique_ptr<Ingredient>> &all
   // Parse allergens
   splitValues.clear();
 
-  std::unordered_set<Allergen *> allergens;
+  std::set<Allergen *> allergens;
   boost::split(splitValues, allergensStr, boost::is_any_of(", "));
   for (auto &allName : splitValues) {
     if (allName == "") continue;
@@ -116,7 +116,7 @@ Dish parseInput(std::string &line, std::vector<std::unique_ptr<Ingredient>> &all
 
     if (search == allAllergens.end()) {
       allAllergens.push_back(std::make_unique<Allergen>(allName, std::nullopt));
-      search = std::find_if(allAllergens.begin(), allAllergens.end(), predicate);
+      search = allAllergens.end() - 1;
     }
 
     allergens.insert((*search).get());
@@ -129,36 +129,28 @@ Dish parseInput(std::string &line, std::vector<std::unique_ptr<Ingredient>> &all
  * Solve
  */
 
-std::unordered_set<Ingredient *> findPossibleIngredientsWithAllergen(
-    std::vector<Dish> &dishes, std::vector<std::unique_ptr<Ingredient>> &allIngredients, Allergen *allergen) {
-  // Find intersection of all dishes that contain this allergen
-  std::unordered_set<Ingredient *> possibleIngredients;
+// Find intersection of all dishes that contain given allergen
+std::set<Ingredient *> findPossibleIngredientsWithAllergen(std::vector<Dish> &dishes,
+                                                           std::vector<std::unique_ptr<Ingredient>> &allIngredients,
+                                                           Allergen *allergen) {
+  std::set<Ingredient *> possibleIngredients;
   for (auto &ingred : allIngredients) {
+    // Ignore ingredients that were already matched
     if (!ingred->allergen.has_value()) {
       possibleIngredients.insert(ingred.get());
     }
   }
 
   for (auto &dish : dishes) {
-    std::unordered_set<Allergen *> dishAllergens = dish.getAllergens();
+    std::set<Allergen *> dishAllergens = dish.getAllergens();
     auto search = std::find(dishAllergens.begin(), dishAllergens.end(), allergen);
 
     if (search != dishAllergens.end()) {
-      std::unordered_set<Ingredient *> dishIngredients = dish.getIngredients();
-
-      std::vector<Ingredient *> toBeDeleted;
-      for (auto &ingred : possibleIngredients) {
-        auto predicate = [&ingred](Ingredient *i) { return i->name == ingred->name; };
-        auto search = std::find_if(dishIngredients.begin(), dishIngredients.end(), predicate);
-
-        if (search == dishIngredients.end()) {
-          toBeDeleted.push_back(ingred);
-        }
-      }
-
-      for (auto ingred : toBeDeleted) {
-        possibleIngredients.erase(ingred);
-      }
+      std::set<Ingredient *> dishIngredients = dish.getIngredients();
+      std::set<Ingredient *> tmp;
+      std::set_intersection(possibleIngredients.begin(), possibleIngredients.end(), dishIngredients.begin(),
+                            dishIngredients.end(), std::inserter(tmp, tmp.end()));
+      possibleIngredients = tmp;
     }
   }
 
@@ -172,7 +164,7 @@ void findAllAllergens(std::vector<Dish> &dishes, std::vector<std::unique_ptr<Ing
     for (auto &allergen : allAllergens) {
       if (allergen->foundIn.has_value()) continue;
 
-      std::unordered_set<Ingredient *> possibleIngredients =
+      std::set<Ingredient *> possibleIngredients =
           findPossibleIngredientsWithAllergen(dishes, allIngredients, allergen.get());
 
       if (possibleIngredients.size() == 1) {
