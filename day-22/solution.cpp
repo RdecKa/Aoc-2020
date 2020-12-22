@@ -5,7 +5,7 @@
 class Hand {
  private:
   std::deque<short> cards;
-  Hand(std::deque<short> cards) : cards(cards) {}
+  Hand(std::deque<short>& cards) : cards(cards) {}
 
  public:
   Hand() : cards(std::deque<short>()){};
@@ -46,7 +46,7 @@ class Player {
   unsigned int id;
   Hand hand;
 
-  void setHand(Hand hand) { this->hand = hand; }
+  void setHand(Hand& hand) { this->hand = hand; }
 
  public:
   Player() = default;
@@ -119,7 +119,7 @@ class RecursiveGame : public Game {
   // Key is the number of cards of 1st player
   std::map<short, std::set<std::pair<Hand, Hand>>> previousConfigurations;
 
-  bool findOrInsertConfiguration(Hand hand1, Hand hand2) {
+  bool findOrInsertConfiguration(const Hand& hand1, const Hand& hand2) {
     std::pair<Hand, Hand> hands = std::make_pair(hand1, hand2);
     short mapKey = hand1.getNumberOfCards();
 
@@ -137,7 +137,9 @@ class RecursiveGame : public Game {
   }
 
   // Returns true if configuration was found among the previous configurations
-  bool checkIfConfigurationSeen(Hand hand1, Hand hand2) { return !this->findOrInsertConfiguration(hand1, hand2); }
+  bool checkIfConfigurationSeen(const Hand& hand1, const Hand& hand2) {
+    return !this->findOrInsertConfiguration(hand1, hand2);
+  }
 
   // Returns ID of the winner
   unsigned int playSubGame() {
