@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <boost/algorithm/string.hpp>
+#include <deque>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
