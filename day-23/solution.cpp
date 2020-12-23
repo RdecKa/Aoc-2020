@@ -65,7 +65,11 @@ class Game {
     this->currentCup = nextCup;
   }
 
-  ~Game() { this->currentCup->next = nullptr; }
+  ~Game() {
+    // Needed to break the cycle of shared pointers and to avoid stack overflow
+    // when destructing a BigGame object
+    for (size_t i = 1; i < this->cups.size(); ++i) this->cups[i]->next = nullptr;
+  }
 
   void play(size_t nRounds) {
     for (size_t i = 0; i < nRounds; ++i) {
